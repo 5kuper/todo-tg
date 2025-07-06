@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>5d82509b-eecc-46ad-88ca-b6b024f24416</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\TodoTg.Application\TodoTg.Application.csproj" />
+    <ProjectReference Include="..\Core\TodoTg.Domain\TodoTg.Domain.csproj" />
+    <ProjectReference Include="..\Infra\TodoTg.Bot\TodoTg.Bot.csproj" />
+    <ProjectReference Include="..\Infra\TodoTg.Data\TodoTg.Data.csproj" />
+  </ItemGroup>
+
+</Project>
