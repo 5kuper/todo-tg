@@ -1,6 +1,5 @@
 ﻿using TodoTg.Application.Services.Abstractions;
 using TodoTg.Application.Services.Implementations;
-using TodoTg.Bot;
 using TodoTg.Bot.States;
 using TodoTg.Data.Repositories;
 using TodoTg.Domain.Repositories;
@@ -29,6 +28,7 @@ namespace TodoTg.Extensions
         {
             services.AddScoped<CreateTaskState>();
             services.AddScoped<TaskListState>();
+            services.AddScoped<TaskInfoState>();
 
             return services;
         }

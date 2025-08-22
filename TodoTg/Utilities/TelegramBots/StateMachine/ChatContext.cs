@@ -9,25 +9,27 @@ namespace Utilities.TelegramBots.StateMachine
         public long ChatId { get; set; }
     }
 
-    public class ChatContext<TData>(IBotState<TData> state, TData data, IServiceProvider sp) where TData : IChatData
+    public class ChatContext<TData>(TData data, IServiceProvider sp) where TData : IChatData
     {
-        private IBotState<TData> _state = state;
-
-        public TData Data { get; } = data;
+        private Type? _stateType;
 
         public string Name { get; set; } = "";
 
-        public bool IsUpdateHandled { get; set; }
+        public TData Data { get; } = data;
 
-        public void ChangeState<TState>() where TState : IBotState<TData>
-        {
-            var scope = sp.CreateScope();
-            _state = scope.ServiceProvider.GetRequiredService<TState>();
-        }
+        public void ChangeState<TState>() where TState : IBotState<TData> => _stateType = typeof(TState);
+
+        public void ChangeStateToDefault() => _stateType = null;
 
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update)
         {
-            await _state.HandleUpdateAsync(this, bot, update);
+            using var scope = sp.CreateScope();
+
+            var state = _stateType != null
+                ? (IBotState<TData>)scope.ServiceProvider.GetRequiredService(_stateType)
+                : scope.ServiceProvider.GetRequiredService<IDefaultState<TData>>();
+
+            await state.HandleUpdateAsync(this, bot, update);
         }
     }
 }

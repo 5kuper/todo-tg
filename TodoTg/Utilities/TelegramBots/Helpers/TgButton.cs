@@ -19,6 +19,8 @@ namespace Utilities.TelegramBots.Helpers
             return InlineKeyboardButton.WithCallbackData(text, data);
         }
 
+        public static InlineKeyboardButton[] Row(this InlineKeyboardButton btn) => [btn];
+
         public static string? Key(this CallbackQuery cq)
         {
             if (string.IsNullOrWhiteSpace(cq.Data)) return null;

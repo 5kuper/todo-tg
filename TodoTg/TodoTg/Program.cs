@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddOptions();
 builder.AddDatabase();
 
-builder.AddTelegramBot<TgBotChatData, DefaultState>();
+builder.AddTelegramBot<TgBotChatData, BaseAppState>();
 
 builder.Services.AddCoreServices();
 builder.Services.AddRepositories();

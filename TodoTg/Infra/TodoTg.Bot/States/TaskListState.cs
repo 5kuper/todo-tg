@@ -1,9 +1,9 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using TodoTg.Application.Services.Abstractions;
 using Utilities.TelegramBots.Helpers;
 using Utilities.TelegramBots.StateMachine;
+using Utilities.Text;
 
 namespace TodoTg.Bot.States
 {
@@ -13,37 +13,34 @@ namespace TodoTg.Bot.States
 
         private const int PageSize = 5;
 
-        public override async Task HandleUpdateAsync(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        public override async Task OnMessage(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
         {
-            await base.HandleUpdateAsync(ctx, bot, update);
-            if (ctx.IsUpdateHandled) return;
+            await ClearForm(ctx, bot);
+            await bot.DeleteMessage(ctx.Data.ChatId, update.Message!.Id);
+            await ShowTaskList(ctx, bot, 1);
+        }
 
-            switch (update.Type)
+        public override async Task OnCallbackQuery(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        {
+            var cq = update.CallbackQuery!;
+            switch (cq.Key())
             {
-                case UpdateType.Message:
+                case TaskKey:
                 {
-                    await ShowTaskList(ctx, bot, 1);
+                    ctx.Data.SelectedTaskId = cq.Value<Guid>();
+
+                    await bot.AnswerCallbackQuery(cq.Id);
+                    await bot.DeleteMessage(ctx.Data.ChatId, cq.Message!.Id);
+
+                    ctx.ChangeState<TaskInfoState>();
+                    await ctx.HandleUpdateAsync(bot, update);
                     break;
                 }
-                case UpdateType.CallbackQuery:
+                case TgPagination.Key:
                 {
-                    var cq = update.CallbackQuery!;
-                    switch (cq.Key())
-                    {
-                        case TaskKey:
-                        {
-                            var id = cq.Value<Guid>();
-                            await bot.AnswerCallbackQuery(cq.Id, $"You selected '{id}' task");
-                            break;
-                        }
-                        case TgPagination.Key:
-                        {
-                            var page = cq.Value<int>();
-                            await ShowTaskList(ctx, bot, page, cq.Message!.Id);
-                            await bot.AnswerCallbackQuery(cq.Id);
-                            break;
-                        }
-                    }
+                    var page = cq.Value<int>();
+                    await ShowTaskList(ctx, bot, page, cq.Message!.Id);
+                    await bot.AnswerCallbackQuery(cq.Id);
                     break;
                 }
             }
@@ -53,12 +50,15 @@ namespace TodoTg.Bot.States
         {
             var tasks = await todoService.ListAsync(ctx.Data.GetUserId(), page, PageSize);
 
-            var buttons = tasks.Items.Select(todo => TgButton.Create(todo.Title, TaskKey, todo.Id)).ToList();
+            var buttons = tasks.Items.Select(todo =>
+                TgButton.Create($"{(todo.IsCompleted ? "✅" : "🔲")} {todo.Title}", TaskKey, todo.Id)).ToList();
+
             var keyboard = TgPagination.Create(buttons, page, tasks.NumPages);
 
             if (msgId == null)
             {
-                await bot.SendMessage(ctx.Data.ChatId, "Your tasks:", replyMarkup: keyboard);
+                var msg = await bot.SendMessage(ctx.Data.ChatId, "Your tasks".PadCenter(50), replyMarkup: keyboard);
+                ctx.Data.FormMsgId = msg.MessageId;
             }
             else
             {

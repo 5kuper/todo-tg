@@ -7,11 +7,8 @@ namespace TodoTg.Bot.States
 {
     public class CreateTaskState(IUserService userService, ITodoService todoService) : BaseAppState(userService)
     {
-        public override async Task HandleUpdateAsync(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        public override async Task OnMessage(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
         {
-            await base.HandleUpdateAsync(ctx, bot, update);
-            if (ctx.IsUpdateHandled) return;
-
             var msg = update.Message?.Text;
 
             if (string.IsNullOrWhiteSpace(msg) || msg.Length < 3)
@@ -23,7 +20,7 @@ namespace TodoTg.Bot.States
             var todo = await todoService.CreateAsync(new() { Title = msg, UserId = ctx.Data.GetUserId() });
 
             await bot.SendMessage(ctx.Data.ChatId, $"Task '{todo.Title}' has been created.");
-            ctx.ChangeState<DefaultState>();
+            ctx.ChangeStateToDefault();
         }
     }
 }
