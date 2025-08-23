@@ -34,9 +34,9 @@ namespace Utilities.TelegramBots
 
             if (chat != null)
             {
-                var ctx = await ctxAccessor.GetAsync(chat.Id);
+                var ctx = await ctxAccessor.GetAsync(chat.Id, bot);
                 ctx.Name = chat.FirstName + chat.LastName;
-                await ctx.HandleUpdateAsync(bot, update);
+                await ctx.HandleUpdateAsync(update);
             }
         }
 

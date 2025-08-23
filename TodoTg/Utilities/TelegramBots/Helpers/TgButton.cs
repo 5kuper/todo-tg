@@ -19,7 +19,12 @@ namespace Utilities.TelegramBots.Helpers
             return InlineKeyboardButton.WithCallbackData(text, data);
         }
 
-        public static InlineKeyboardButton[] Row(this InlineKeyboardButton btn) => [btn];
+        public static InlineKeyboardButton CreateForEnum<T>(string text, string key, T value)
+            where T : struct, Enum
+        {
+            var data = $"{key}{CallbackSeparator}{value}";
+            return InlineKeyboardButton.WithCallbackData(text, data);
+        }
 
         public static string? Key(this CallbackQuery cq)
         {
@@ -29,8 +34,7 @@ namespace Utilities.TelegramBots.Helpers
             return i > 0 ? cq.Data[..i] : null;
         }
 
-        public static T Value<T>(this CallbackQuery cq)
-            where T : IParsable<T>
+        public static string Value(this CallbackQuery cq)
         {
             if (string.IsNullOrWhiteSpace(cq.Data))
                 throw new FormatException("Empty callback data.");
@@ -39,11 +43,26 @@ namespace Utilities.TelegramBots.Helpers
             if (i < 0 || i == cq.Data.Length - 1)
                 throw new FormatException("No value in the callback data.");
 
-            var isParsed = T.TryParse(cq.Data[(i + 1)..], null, out var result);
+            return cq.Data[(i + 1)..];
+        }
+
+        public static T Value<T>(this CallbackQuery cq)
+            where T : IParsable<T>
+        {
+            var isParsed = T.TryParse(cq.Value(), null, out var result);
 
             return isParsed && result != null ? result
                 : throw new FormatException("Invalid callback data.");
         }
+
+        public static T EnumValue<T>(this CallbackQuery cq)
+            where T : struct, Enum
+        {
+            var isParsed = Enum.TryParse<T>(cq.Value(), true, out var result);
+            return isParsed ? result : throw new FormatException("Invalid callback data.");
+        }
+
+        public static InlineKeyboardButton[] Row(this InlineKeyboardButton btn) => [btn];
 
         public static async Task AnswerIfEmpty(this CallbackQuery? cq, ITelegramBotClient bot)
         {

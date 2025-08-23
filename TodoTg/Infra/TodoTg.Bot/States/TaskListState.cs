@@ -1,6 +1,7 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using TodoTg.Application.Services.Abstractions;
+using TodoTg.Bot.Resources;
 using Utilities.TelegramBots.Helpers;
 using Utilities.TelegramBots.StateMachine;
 using Utilities.Text;
@@ -13,14 +14,12 @@ namespace TodoTg.Bot.States
 
         private const int PageSize = 5;
 
-        public override async Task OnMessage(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        public override async Task OnEnterAsync(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
-            await ClearForm(ctx, bot);
-            await bot.DeleteMessage(ctx.Data.ChatId, update.Message!.Id);
             await ShowTaskList(ctx, bot, 1);
         }
 
-        public override async Task OnCallbackQuery(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        public override async Task OnCallbackAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
             var cq = update.CallbackQuery!;
             switch (cq.Key())
@@ -32,8 +31,7 @@ namespace TodoTg.Bot.States
                     await bot.AnswerCallbackQuery(cq.Id);
                     await bot.DeleteMessage(ctx.Data.ChatId, cq.Message!.Id);
 
-                    ctx.ChangeState<TaskInfoState>();
-                    await ctx.HandleUpdateAsync(bot, update);
+                    await ctx.ChangeState<TaskInfoState>();
                     break;
                 }
                 case TgPagination.Key:
@@ -57,7 +55,7 @@ namespace TodoTg.Bot.States
 
             if (msgId == null)
             {
-                var msg = await bot.SendMessage(ctx.Data.ChatId, "Your tasks".PadCenter(50), replyMarkup: keyboard);
+                var msg = await bot.SendMessage(ctx.Data.ChatId, Strings.YourTasks.PadCenter(50), replyMarkup: keyboard);
                 ctx.Data.FormMsgId = msg.MessageId;
             }
             else

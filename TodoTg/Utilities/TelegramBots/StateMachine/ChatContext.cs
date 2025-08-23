@@ -9,27 +9,65 @@ namespace Utilities.TelegramBots.StateMachine
         public long ChatId { get; set; }
     }
 
-    public class ChatContext<TData>(TData data, IServiceProvider sp) where TData : IChatData
+    public class ChatContext<TData>(ITelegramBotClient bot, TData data, IServiceProvider sp) : IDisposable
+        where TData : IChatData
     {
-        private Type? _stateType;
+        private readonly SemaphoreSlim _gate = new(1, 1);
+
+        private Type? _currentStateType;
+        private IServiceScope? _updateScope;
 
         public string Name { get; set; } = "";
 
+        public ITelegramBotClient Bot { get; } = bot;
+
         public TData Data { get; } = data;
 
-        public void ChangeState<TState>() where TState : IBotState<TData> => _stateType = typeof(TState);
-
-        public void ChangeStateToDefault() => _stateType = null;
-
-        public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update)
+        public async Task HandleUpdateAsync(Update update)
         {
-            using var scope = sp.CreateScope();
+            await _gate.WaitAsync();
+            try
+            {
+                _updateScope = sp.CreateScope();
 
-            var state = _stateType != null
-                ? (IBotState<TData>)scope.ServiceProvider.GetRequiredService(_stateType)
-                : scope.ServiceProvider.GetRequiredService<IDefaultState<TData>>();
+                var state = _currentStateType != null
+                    ? InstantiateCurrentState()
+                    : await UseState<IDefaultState<TData>>();
 
-            await state.HandleUpdateAsync(this, bot, update);
+                await state.OnUpdateAsync(update, this, bot);
+            }
+            finally
+            {
+                _updateScope?.Dispose();
+                _updateScope = null;
+
+                _gate.Release();
+            }
         }
+
+        public Task ChangeStateToDefault() => ChangeState<IDefaultState<TData>>();
+
+        public async Task ChangeState<TState>() where TState : IBotState<TData>
+        {
+            await UseState<TState>();
+        }
+
+        private async Task<IBotState<TData>> UseState<TState>() where TState : IBotState<TData>
+        {
+            _currentStateType = typeof(TState);
+            var state = InstantiateCurrentState();
+            await state.OnEnterAsync(this, bot);
+            return state;
+        }
+
+        private IBotState<TData> InstantiateCurrentState()
+        {
+            if (_updateScope is null || _currentStateType is null)
+                throw new InvalidOperationException("Out of update scope.");
+
+            return (IBotState<TData>)_updateScope.ServiceProvider.GetRequiredService(_currentStateType);
+        }
+
+        public void Dispose() => _gate.Dispose();
     }
 }

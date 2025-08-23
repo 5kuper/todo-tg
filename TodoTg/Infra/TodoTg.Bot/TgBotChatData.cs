@@ -3,16 +3,19 @@ using Utilities.TelegramBots.StateMachine;
 
 namespace TodoTg.Bot
 {
-    public enum EditOption
-    {
-        Title, Description, Priority
-    }
+    public enum Language { En, Ru }
+
+    public enum EditOption { Title, Description, Priority }
 
     public class TgBotChatData : Entity, IChatData
     {
         public long ChatId { get; set; }
 
+
+        public Language Language { get; set; }
+
         public int? FormMsgId { get; set; }
+
 
         public Guid? UserId { get; set; }
 

@@ -3,6 +3,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TodoTg.Application.Services.Abstractions;
+using TodoTg.Bot.Resources;
 using TodoTg.Domain.ValueObj;
 using Utilities.TelegramBots.Helpers;
 using Utilities.TelegramBots.StateMachine;
@@ -11,18 +12,23 @@ namespace TodoTg.Bot.States
 {
     public class TaskInfoState(IUserService userService, ITodoService todoService) : BaseAppState(userService)
     {
-        private const string ComplateKey = "set-complated";
+        private const string CompleteKey = "set-complated";
 
         private const string EditKey = "edit";
 
         private const string CancelKey = "cancel";
 
-        public override async Task OnCallbackQuery(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        public override async Task OnEnterAsync(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
+        {
+            await ShowInfo(ctx, bot);
+        }
+
+        public override async Task OnCallbackAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
             var cq = update.CallbackQuery!;
             switch (cq.Key())
             {
-                case ComplateKey:
+                case CompleteKey:
                 {
                     if (ctx.Data.SelectedTaskId is null)
                         throw new InvalidOperationException("SelectedTaskId is null.");
@@ -41,15 +47,10 @@ namespace TodoTg.Bot.States
                     await ShowInfo(ctx, bot, cq.Message!.Id);
                     return;
                 }
-                default:
-                {
-                    await ShowInfo(ctx, bot);
-                    return;
-                }
             }
         }
 
-        public override async Task OnMessage(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, Update update)
+        public override async Task OnMessageAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
             if (ctx.Data.SelectedEditOption is null) return;
 
@@ -63,13 +64,13 @@ namespace TodoTg.Bot.States
                 {
                     if (string.IsNullOrWhiteSpace(msg) || msg.Length < 3)
                     {
-                        await bot.SendMessage(ctx.Data.ChatId, "The title is too short. Enter it again:");
+                        await bot.SendMessage(ctx.Data.ChatId, Strings.TitleTooShort);
                         return;
                     }
 
                     await todoService.UpdateAsync(ctx.Data.SelectedTaskId.Value, new() { Title = msg });
                     ctx.Data.SelectedEditOption = null;
-                    await bot.SendMessage(ctx.Data.ChatId, "The task has been renamed.");
+                    await bot.SendMessage(ctx.Data.ChatId, Strings.TaskRenamed);
                     await ShowInfo(ctx, bot);
                     break;
                 }
@@ -85,7 +86,7 @@ namespace TodoTg.Bot.States
             var task = await todoService.GetAsync(ctx.Data.SelectedTaskId.Value);
             if (task is null)
             {
-                await bot.SendMessage(ctx.Data.ChatId, "No task");
+                await bot.SendMessage(ctx.Data.ChatId, Strings.NoTask);
                 return;
             }
 
@@ -99,14 +100,15 @@ namespace TodoTg.Bot.States
 
             var text = $"""
                     {priorityMark}<b>{task.Title}</b>
-                    {task.Description ?? "No description."}
+                    {task.Description ?? Strings.NoDescription}
                     """;
 
+            var btnText = task.IsCompleted ? Strings.CompletedBtn : Strings.UncompletedButton;
             var keyboard = new InlineKeyboardMarkup(new[]
             {
-                    TgButton.Create(task.IsCompleted ? "✅ Complated" : "🔲 Uncompleted", ComplateKey, !task.IsCompleted).Row(),
-                    TgButton.Create("Edit", EditKey, 0).Row()
-                });
+                TgButton.Create(btnText, CompleteKey, !task.IsCompleted).Row(),
+                TgButton.Create(Strings.EditBtn, EditKey, 0).Row()
+            });
 
             if (msgId is null)
             {
@@ -133,12 +135,12 @@ namespace TodoTg.Bot.States
                         .Select(x => TgButton.Create("▶️ " + x, EditKey, x).Row())
                         .ToList();
 
-                    buttons.Add(TgButton.Create("❌ Cancel", CancelKey, 0).Row());
+                    buttons.Add(TgButton.Create(Strings.CancelBtn, CancelKey, 0).Row());
                     var keyboard = new InlineKeyboardMarkup(buttons);
 
                     ctx.Data.SelectedEditOption = null;
 
-                    await bot.EditMessageText(ctx.Data.ChatId, cq.Message!.Id, "What do you want to edit?");
+                    await bot.EditMessageText(ctx.Data.ChatId, cq.Message!.Id, Strings.WhatToEdit);
                     await bot.EditMessageReplyMarkup(ctx.Data.ChatId, cq.Message!.Id, keyboard);
 
                     await bot.AnswerCallbackQuery(cq.Id);
@@ -149,7 +151,7 @@ namespace TodoTg.Bot.States
                     await ClearForm(ctx, bot);
 
                     ctx.Data.SelectedEditOption = EditOption.Title;
-                    await bot.SendMessage(ctx.Data.ChatId, "Enter a new title:");
+                    await bot.SendMessage(ctx.Data.ChatId, Strings.EnterNewTaskTitle);
 
                     await bot.AnswerCallbackQuery(cq.Id);
                     return;
