@@ -26,8 +26,9 @@ namespace TodoTg.Extensions
 
         public static IServiceCollection AddTgBotStates(this IServiceCollection services)
         {
-            services.AddScoped<CreateTaskState>();
             services.AddScoped<StartState>();
+
+            services.AddScoped<CreateTaskState>();
             services.AddScoped<TaskListState>();
             services.AddScoped<TaskInfoState>();
 

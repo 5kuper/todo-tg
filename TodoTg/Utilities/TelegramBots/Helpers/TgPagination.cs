@@ -15,17 +15,22 @@ namespace Utilities.TelegramBots.Helpers
                 throw new ArgumentOutOfRangeException(nameof(currPage), "Current page must be between 1 and the total number of pages.");
 
             var rows = items.Select(b => new[] { b }).ToList();
-            var paginationRow = new List<InlineKeyboardButton>();
 
-            if (currPage > 1)
-                paginationRow.Add(TgButton.Create("◀️", Key, currPage - 1));
+            if (numPages > 1)
+            {
+                var paginationRow = new List<InlineKeyboardButton>();
 
-            paginationRow.Add(TgButton.Create($"{currPage}/{numPages}"));
+                if (currPage > 1)
+                    paginationRow.Add(TgButton.Create("◀️", Key, currPage - 1));
 
-            if (currPage < numPages)
-                paginationRow.Add(TgButton.Create("▶️", Key, currPage + 1));
+                paginationRow.Add(TgButton.Create($"{currPage}/{numPages}"));
 
-            rows.Add([..paginationRow]);
+                if (currPage < numPages)
+                    paginationRow.Add(TgButton.Create("▶️", Key, currPage + 1));
+
+                rows.Add([.. paginationRow]);
+            }
+
             return new InlineKeyboardMarkup(rows);
         }
     }

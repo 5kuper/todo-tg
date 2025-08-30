@@ -61,6 +61,15 @@ namespace TodoTg.Bot.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Back.
+        /// </summary>
+        internal static string BackBtn {
+            get {
+                return ResourceManager.GetString("BackBtn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ❌ Cancel.
         /// </summary>
         internal static string CancelBtn {
@@ -142,6 +151,24 @@ namespace TodoTg.Bot.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No tasks.
+        /// </summary>
+        internal static string NoTasks {
+            get {
+                return ResourceManager.GetString("NoTasks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Session has expired.
+        /// </summary>
+        internal static string SessionExpired {
+            get {
+                return ResourceManager.GetString("SessionExpired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Task &apos;{0}&apos; has been created..
         /// </summary>
         internal static string TaskCreated {
@@ -174,6 +201,15 @@ namespace TodoTg.Bot.Resources {
         internal static string UncompletedButton {
             get {
                 return ResourceManager.GetString("UncompletedButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown command.
+        /// </summary>
+        internal static string UnknownCommand {
+            get {
+                return ResourceManager.GetString("UnknownCommand", resourceCulture);
             }
         }
         

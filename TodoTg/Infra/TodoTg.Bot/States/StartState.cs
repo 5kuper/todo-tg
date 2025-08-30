@@ -3,6 +3,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TodoTg.Application.Services.Abstractions;
 using TodoTg.Bot.Resources;
+using TodoTg.Domain.ValueObj;
 using Utilities.TelegramBots.Helpers;
 using Utilities.TelegramBots.StateMachine;
 
@@ -14,33 +15,36 @@ namespace TodoTg.Bot.States
 
         public override async Task OnEnterAsync(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
-            var keyboard = new InlineKeyboardMarkup(new[]
-{
-                TgButton.CreateForEnum("English", LangKey, Language.En).Row(),
-                TgButton.CreateForEnum("Русский", LangKey, Language.Ru).Row()
-            });
+            var keyboard = new InlineKeyboardMarkup([
+                TgButton.CreateForEnum("English", LangKey, AppLanguage.En).Row(),
+                TgButton.CreateForEnum("Русский", LangKey, AppLanguage.Ru).Row()
+            ]);
 
             var msg = await bot.SendMessage(ctx.Data.ChatId, Strings.ChooseLanguage, replyMarkup: keyboard);
             ctx.Data.FormMsgId = msg.MessageId;
         }
 
-        public override async Task OnCallbackAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
+        public override async Task<bool> OnCallbackAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
             var cq = update.CallbackQuery!;
             if (cq.Key() == LangKey)
             {
-                ctx.Data.Language = cq.EnumValue<Language>();
-                var text = Strings.ResourceManager.GetString(nameof(Strings.LangUpdated), GetUserCulture(ctx));
+                var lang = cq.EnumValue<AppLanguage>();
+                await UserService.UpdateAsync(ctx.Data.GetUserId(), new() { Language = lang });
 
-                await bot.EditMessageReplyMarkup(ctx.Data.ChatId, cq.Message!.Id, replyMarkup: null);
+                var text = Strings.ResourceManager.GetString(nameof(Strings.LangUpdated), LangToCulture(lang));
                 await bot.EditMessageText(ctx.Data.ChatId, cq.Message!.Id, text!);
+
+                var keyboard = TgDialog.CreateOkKeyboard();
+                await bot.EditMessageReplyMarkup(ctx.Data.ChatId, cq.Message!.Id, replyMarkup: keyboard);
 
                 ctx.Data.FormMsgId = null;
 
-                await bot.AnswerCallbackQuery(cq.Id);
                 await ctx.ChangeStateToDefault();
-                return;
+                return true;
             }
+
+            return false;
         }
     }
 }

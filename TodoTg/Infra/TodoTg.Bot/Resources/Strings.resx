@@ -162,4 +162,16 @@
   <data name="LangUpdated" xml:space="preserve">
     <value>Language set to english</value>
   </data>
+  <data name="SessionExpired" xml:space="preserve">
+    <value>Session has expired</value>
+  </data>
+  <data name="UnknownCommand" xml:space="preserve">
+    <value>Unknown command</value>
+  </data>
+  <data name="BackBtn" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="NoTasks" xml:space="preserve">
+    <value>No tasks</value>
+  </data>
 </root>

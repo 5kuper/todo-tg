@@ -162,4 +162,16 @@
   <data name="LangUpdated" xml:space="preserve">
     <value>Установлен русский язык</value>
   </data>
+  <data name="SessionExpired" xml:space="preserve">
+    <value>Сессия истекла</value>
+  </data>
+  <data name="UnknownCommand" xml:space="preserve">
+    <value>Неизвестная команда</value>
+  </data>
+  <data name="BackBtn" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="NoTasks" xml:space="preserve">
+    <value>Нет задач</value>
+  </data>
 </root>

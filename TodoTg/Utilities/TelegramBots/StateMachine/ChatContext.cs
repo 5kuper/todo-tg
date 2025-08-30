@@ -19,8 +19,6 @@ namespace Utilities.TelegramBots.StateMachine
 
         public string Name { get; set; } = "";
 
-        public ITelegramBotClient Bot { get; } = bot;
-
         public TData Data { get; } = data;
 
         public async Task HandleUpdateAsync(Update update)

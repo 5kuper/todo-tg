@@ -64,9 +64,14 @@ namespace Utilities.TelegramBots.Helpers
 
         public static InlineKeyboardButton[] Row(this InlineKeyboardButton btn) => [btn];
 
-        public static async Task AnswerIfEmpty(this CallbackQuery? cq, ITelegramBotClient bot)
+        public static async Task<bool> AnswerIfEmpty(this CallbackQuery? cq, ITelegramBotClient bot)
         {
-            if (cq?.Key() == EmptyKey) await bot.AnswerCallbackQuery(cq.Id);
+            if (cq?.Key() == EmptyKey)
+            {
+                await bot.AnswerCallbackQuery(cq.Id);
+                return true;
+            }
+            return false;
         }
     }
 }

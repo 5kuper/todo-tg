@@ -2,7 +2,7 @@
 {
     public static class TextHelper
     {
-        public static string PadCenter(this string text, int length)
+        public static string PadCenter(this string text, int length = 50)
         {
             const char dot = '·';
             const char fill = '-';

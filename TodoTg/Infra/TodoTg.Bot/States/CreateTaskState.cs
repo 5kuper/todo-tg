@@ -26,7 +26,7 @@ namespace TodoTg.Bot.States
             var todo = await todoService.CreateAsync(new() { Title = msg, UserId = ctx.Data.GetUserId() });
 
             await bot.SendMessage(ctx.Data.ChatId, string.Format(Strings.TaskCreated, todo.Title));
-            ctx.ChangeStateToDefault();
+            await ctx.ChangeStateToDefault();
         }
     }
 }

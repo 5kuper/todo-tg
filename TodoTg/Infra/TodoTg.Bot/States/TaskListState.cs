@@ -16,10 +16,10 @@ namespace TodoTg.Bot.States
 
         public override async Task OnEnterAsync(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
-            await ShowTaskList(ctx, bot, 1);
+            await ShowTaskList(ctx, bot, ctx.Data.CurrentTasksPage);
         }
 
-        public override async Task OnCallbackAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
+        public override async Task<bool> OnCallbackAsync(Update update, ChatContext<TgBotChatData> ctx, ITelegramBotClient bot)
         {
             var cq = update.CallbackQuery!;
             switch (cq.Key())
@@ -27,26 +27,29 @@ namespace TodoTg.Bot.States
                 case TaskKey:
                 {
                     ctx.Data.SelectedTaskId = cq.Value<Guid>();
-
-                    await bot.AnswerCallbackQuery(cq.Id);
                     await bot.DeleteMessage(ctx.Data.ChatId, cq.Message!.Id);
-
                     await ctx.ChangeState<TaskInfoState>();
-                    break;
+                    return true;
                 }
                 case TgPagination.Key:
                 {
                     var page = cq.Value<int>();
                     await ShowTaskList(ctx, bot, page, cq.Message!.Id);
-                    await bot.AnswerCallbackQuery(cq.Id);
-                    break;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private async Task ShowTaskList(ChatContext<TgBotChatData> ctx, ITelegramBotClient bot, int page, int? msgId = null)
         {
             var tasks = await todoService.ListAsync(ctx.Data.GetUserId(), page, PageSize);
+
+            if (tasks.TotalCount == 0)
+            {
+                await bot.SendMessage(ctx.Data.ChatId, Strings.NoTasks);
+            }
 
             var buttons = tasks.Items.Select(todo =>
                 TgButton.Create($"{(todo.IsCompleted ? "✅" : "🔲")} {todo.Title}", TaskKey, todo.Id)).ToList();
@@ -55,7 +58,7 @@ namespace TodoTg.Bot.States
 
             if (msgId == null)
             {
-                var msg = await bot.SendMessage(ctx.Data.ChatId, Strings.YourTasks.PadCenter(50), replyMarkup: keyboard);
+                var msg = await bot.SendMessage(ctx.Data.ChatId, Strings.YourTasks.PadCenter(), replyMarkup: keyboard);
                 ctx.Data.FormMsgId = msg.MessageId;
             }
             else
